@@ -32,7 +32,7 @@
               runHook preInstall
 
               install -Dm755 ${./bin/agent-notify} $out/bin/agent-notify
-              install -Dm755 ${./bin/agent-notify-claude} $out/bin/agent-notify-claude
+              install -Dm755 ${./bin/agent-notify-hook} $out/bin/agent-notify-hook
               install -Dm755 ${./bin/agent-notify-codex} $out/bin/agent-notify-codex
 
               wrapProgram $out/bin/agent-notify \
@@ -40,10 +40,14 @@
                   pkgs.curl
                   pkgs.jq
                 ]}
-              wrapProgram $out/bin/agent-notify-claude \
+              wrapProgram $out/bin/agent-notify-hook \
                 --prefix PATH : ${lib.makeBinPath [ pkgs.jq ]}:$out/bin
               wrapProgram $out/bin/agent-notify-codex \
                 --prefix PATH : ${lib.makeBinPath [ pkgs.jq ]}:$out/bin
+
+              mkdir -p $out/claude-plugin/.claude-plugin $out/claude-plugin/hooks
+              install -Dm444 ${./plugins/claude/plugin.json} $out/claude-plugin/.claude-plugin/plugin.json
+              sed "s|@hook@|$out/bin/agent-notify-hook|" ${./plugins/claude/hooks.json} > $out/claude-plugin/hooks/hooks.json
 
               runHook postInstall
             '';

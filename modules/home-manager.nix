@@ -60,7 +60,8 @@ in
       type = lib.types.bool;
       default = true;
       description = ''
-        Install Claude Code hooks (Stop = work complete, Notification = permission prompt).
+        Install Claude Code hooks as a personal plugin (Stop = work complete,
+        Notification = permission prompt). Does not touch `~/.claude/settings.json`.
         Requires `programs.claude-code.enable = true` (home-manager module).
       '';
     };
@@ -69,7 +70,9 @@ in
       type = lib.types.bool;
       default = true;
       description = ''
-        Set the codex `notify` hook (fires on agent-turn-complete).
+        Write codex lifecycle hooks to `$CODEX_HOME/hooks.json`
+        (Stop = work complete, PermissionRequest = permission prompt).
+        Does not touch the user-managed `config.toml`.
         Requires `programs.codex.enable = true` (home-manager module).
       '';
     };
@@ -110,33 +113,32 @@ in
       HYPRLAND_TIME=${toString cfg.hyprland.timeout}
     '';
 
-    programs.claude-code.settings = lib.mkIf cfg.claude.enable {
-      hooks = {
-        Stop = [
-          {
-            hooks = [
-              {
-                type = "command";
-                command = "${bin}/agent-notify-claude complete";
-              }
-            ];
-          }
-        ];
-        Notification = [
-          {
-            matcher = "permission_prompt";
-            hooks = [
-              {
-                type = "command";
-                command = "${bin}/agent-notify-claude permission";
-              }
-            ];
-          }
-        ];
-      };
-    };
+    programs.claude-code.plugins.agent-notify = lib.mkIf cfg.claude.enable "${cfg.package}/claude-plugin";
 
-    programs.codex.settings.notify = lib.mkIf cfg.codex.enable [ "${bin}/agent-notify-codex" ];
+    programs.codex.hooks = lib.mkIf cfg.codex.enable {
+      Stop = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${bin}/agent-notify-hook codex complete";
+              timeout = 15;
+            }
+          ];
+        }
+      ];
+      PermissionRequest = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${bin}/agent-notify-hook codex permission";
+              timeout = 15;
+            }
+          ];
+        }
+      ];
+    };
 
     xdg.configFile."opencode/plugins/agent-notify.ts" = lib.mkIf cfg.opencode.enable {
       text = lib.replaceStrings

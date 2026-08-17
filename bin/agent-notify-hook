@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EVENT="${1:-complete}"
+SOURCE="${1:-agent}"
+EVENT="${2:-complete}"
 
 INPUT="$(cat 2>/dev/null || true)"
 TEXT=""
 DIR=""
 if [[ -n "$INPUT" ]] && command -v jq >/dev/null 2>&1; then
-  TEXT="$(jq -r '.message // empty' <<<"$INPUT" 2>/dev/null || true)"
+  TEXT="$(jq -r '.message // .tool_name // empty' <<<"$INPUT" 2>/dev/null || true)"
   DIR="$(jq -r '.cwd // empty' <<<"$INPUT" 2>/dev/null || true)"
 fi
 
-exec agent-notify claude "$EVENT" "$TEXT" "$DIR"
+exec agent-notify "$SOURCE" "$EVENT" "$TEXT" "$DIR"

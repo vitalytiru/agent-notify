@@ -10,11 +10,13 @@
 
 | Агент | Механизм | События |
 |---|---|---|
-| Claude Code | hooks в `settings.json` (`Stop`, `Notification`) | complete, permission |
-| Codex CLI | `notify` в `config.toml` | complete (permission у codex в `notify` нет) |
+| Claude Code | personal plugin с `hooks/hooks.json` | complete (`Stop`), permission (`Notification`) |
+| Codex CLI | `$CODEX_HOME/hooks.json` | complete (`Stop`), permission (`PermissionRequest`) |
 | opencode | плагин в `~/.config/opencode/plugins/` (`session.idle`, `permission.asked`) | complete, permission |
 
 Все интеграции зовут один диспетчер `agent-notify`, который шлёт уведомление в Hyprland (`hyprctl notify`) и/или в Telegram (Bot API).
+
+Интеграции **не трогают** ваши файлы конфигурации: `~/.claude/settings.json` и `~/.codex/config.toml` остаются под вашим контролем — хуки приезжают через отдельные файлы (плагин Claude и `hooks.json` Codex).
 
 ## Установка (home-manager)
 
@@ -63,9 +65,14 @@ chmod 600 ~/.config/agent-notify/token
 | `telegram.tokenFile` | `~/.config/agent-notify/token` | Файл с токеном бота |
 | `hyprland.enable` | `true` | Показывать `hyprctl notify` (только в сессии Hyprland) |
 | `hyprland.timeout` | `5000` | Таймаут уведомления, мс |
-| `claude.enable` | `true` | Hooks Claude Code (нужен `programs.claude-code.enable`) |
-| `codex.enable` | `true` | Notify Codex (нужен `programs.codex.enable`) |
+| `claude.enable` | `true` | Плагин с hooks Claude Code (нужен `programs.claude-code.enable`) |
+| `codex.enable` | `true` | `hooks.json` Codex (нужен `programs.codex.enable`) |
 | `opencode.enable` | `true` | Плагин opencode (работает с любой установкой) |
+
+## Замечания
+
+- **Claude Code**: плагин загружается как персональный (`~/.claude/skills/`); если не применится — попробуйте `/reload-plugins` в сессии claude.
+- **Codex**: hooks включены по умолчанию (`features.hooks = true`). При первом запуске codex может запросить подтверждение доверия новому хуку.
 
 ## Разработка
 
