@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PAYLOAD="${1:-}"
+
+TEXT=""
+DIR=""
+if [[ -n "$PAYLOAD" ]] && command -v jq >/dev/null 2>&1; then
+  TEXT="$(jq -r '."last-assistant-message" // empty' <<<"$PAYLOAD" 2>/dev/null || true)"
+  DIR="$(jq -r '.cwd // empty' <<<"$PAYLOAD" 2>/dev/null || true)"
+fi
+
+exec agent-notify codex complete "$TEXT" "$DIR"

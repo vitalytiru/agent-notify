@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE="${1:-agent}"
+EVENT="${2:-complete}"
+TEXT="${3:-}"
+DIR="${4:-}"
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/agent-notify"
+CONFIG_FILE="${AGENT_NOTIFY_CONFIG:-$CONFIG_DIR/config}"
+
+TELEGRAM_ENABLED="${TELEGRAM_ENABLED:-1}"
+TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
+TELEGRAM_TOKEN_FILE="${TELEGRAM_TOKEN_FILE:-$CONFIG_DIR/token}"
+HYPRLAND_ENABLED="${HYPRLAND_ENABLED:-1}"
+HYPRLAND_TIME="${HYPRLAND_TIME:-5000}"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONFIG_FILE"
+fi
+
+case "$EVENT" in
+  complete)
+    LABEL="work complete"
+    COLOR="rgb(2ecc71)"
+    ;;
+  permission)
+    LABEL="asking for permission"
+    COLOR="rgb(f39c12)"
+    ;;
+  *)
+    LABEL="$EVENT"
+    COLOR="rgb(3498db)"
+    ;;
+esac
+
+MSG="[$SOURCE] $LABEL"
+if [[ -n "$DIR" ]]; then
+  MSG="$MSG ($(basename "$DIR"))"
+fi
+if [[ -n "$TEXT" ]]; then
+  MSG="$MSG: ${TEXT:0:300}"
+fi
+
+if [[ "$HYPRLAND_ENABLED" == "1" && -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null 2>&1; then
+  hyprctl notify -1 "$HYPRLAND_TIME" "$COLOR" "$MSG" >/dev/null 2>&1 || true
+fi
+
+if [[ "$TELEGRAM_ENABLED" == "1" && -n "$TELEGRAM_CHAT_ID" ]]; then
+  TOKEN_FILE="${TELEGRAM_TOKEN_FILE/#\~/$HOME}"
+  if [[ -r "$TOKEN_FILE" ]]; then
+    TOKEN="$(<"$TOKEN_FILE")"
+    curl -sf --max-time 10 -X POST \
+      "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+      --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+      --data-urlencode "text=${MSG}" >/dev/null \
+      || echo "agent-notify: failed to send telegram message" >&2
+  else
+    echo "agent-notify: telegram token file not readable: $TOKEN_FILE" >&2
+  fi
+fi
