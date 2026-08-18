@@ -40,7 +40,7 @@ if [[ -n "$DIR" ]]; then
   MSG="$MSG ($(basename "$DIR"))"
 fi
 if [[ -n "$TEXT" ]]; then
-  MSG="$MSG: $TEXT"
+  MSG="$MSG: ${TEXT:0:4000}"
 fi
 
 if [[ "$HYPRLAND_ENABLED" == "1" && -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null 2>&1; then
