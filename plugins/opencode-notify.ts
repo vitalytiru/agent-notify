@@ -15,14 +15,9 @@ export const AgentNotifyPlugin: Plugin = async ({ $, directory }) => {
     if (info?.title) titles.set(sessionID, info.title)
   }
 
-  const trackMessage = (message: any) => {
-    if (!message?.sessionID || message.role !== "assistant") return
-    const text = (message.parts ?? [])
-      .filter((p: any) => p.type === "text" && p.text)
-      .map((p: any) => p.text)
-      .join("\n")
-      .trim()
-    if (text) results.set(message.sessionID, text)
+  const trackPart = (part: any) => {
+    if (!part?.sessionID || part.type !== "text" || !part.text) return
+    results.set(part.sessionID, part.text)
   }
 
   const notify = async (sessionID: string) => {
@@ -48,8 +43,8 @@ export const AgentNotifyPlugin: Plugin = async ({ $, directory }) => {
         }
         return
       }
-      if (event.type === "message.updated") {
-        trackMessage(props.info)
+      if (event.type === "message.part.updated") {
+        trackPart(props.part)
         return
       }
       if (

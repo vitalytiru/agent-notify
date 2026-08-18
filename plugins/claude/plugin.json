@@ -1,7 +1,7 @@
 {
   "name": "agent-notify",
   "description": "Send work-complete and permission notifications to Telegram and Hyprland",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "author": {
     "name": "vitalytiru"
   }
