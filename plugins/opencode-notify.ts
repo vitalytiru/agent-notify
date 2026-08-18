@@ -5,6 +5,7 @@ const BIN = "@agent-notify@"
 const subagents = new Set<string>()
 const titles = new Map<string, string>()
 const results = new Map<string, string>()
+const lastIdle = new Map<string, number>()
 
 export const AgentNotifyPlugin: Plugin = async ({ $, directory }) => {
   const dir = directory.split("/").pop() ?? ""
@@ -22,6 +23,16 @@ export const AgentNotifyPlugin: Plugin = async ({ $, directory }) => {
       .join("\n")
       .trim()
     if (text) results.set(message.sessionID, text)
+  }
+
+  const notify = async (sessionID: string) => {
+    const now = Date.now()
+    if ((lastIdle.get(sessionID) ?? 0) > now - 5000) return
+    lastIdle.set(sessionID, now)
+    if (subagents.has(sessionID)) return
+    const title = titles.get(sessionID) ?? ""
+    const result = results.get(sessionID) ?? ""
+    await $`${BIN} opencode complete ${result || title} ${dir}`.nothrow().quiet()
   }
 
   return {
@@ -45,10 +56,7 @@ export const AgentNotifyPlugin: Plugin = async ({ $, directory }) => {
         event.type === "session.idle" ||
         (event.type === "session.status" && props.status?.type === "idle")
       ) {
-        if (subagents.has(props.sessionID)) return
-        const title = titles.get(props.sessionID) ?? ""
-        const result = results.get(props.sessionID) ?? ""
-        await $`${BIN} opencode complete ${result || title} ${dir}`.nothrow().quiet()
+        await notify(props.sessionID)
       }
       if (event.type === "permission.asked") {
         if (subagents.has(props.sessionID)) return
