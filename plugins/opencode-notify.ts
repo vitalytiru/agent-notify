@@ -26,16 +26,17 @@ export const AgentNotifyPlugin: Plugin = async ({ $, client, directory }) => {
 
   return {
     event: async ({ event }) => {
-      dbg(`event ${event.type} sessionID=${JSON.stringify((event.properties as any)?.sessionID)}`)
-      if (event.type === "session.idle") {
-        const ok = await isMainSession(event.properties.sessionID)
-        dbg(`session.idle ${event.properties.sessionID} isMain=${ok}`)
+      const props = (event.properties ?? {}) as any
+      dbg(`event ${event.type} sessionID=${JSON.stringify(props.sessionID)} props=${JSON.stringify(props)}`)
+      if (event.type === "session.idle" || (event.type === "session.status" && props.status?.type === "idle")) {
+        const ok = await isMainSession(props.sessionID)
+        dbg(`idle ${props.sessionID} isMain=${ok}`)
         if (!ok) return
         await $`${BIN} opencode complete "" ${dir}`.nothrow().quiet()
       }
       if (event.type === "permission.asked") {
-        if (!(await isMainSession(event.properties.sessionID))) return
-        const what = event.properties.patterns.join(", ") || event.properties.permission
+        if (!(await isMainSession(props.sessionID))) return
+        const what = props.patterns.join(", ") || props.permission
         await $`${BIN} opencode permission ${what} ${dir}`.nothrow().quiet()
       }
     },
