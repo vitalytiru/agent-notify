@@ -8,7 +8,7 @@ INPUT="$(cat 2>/dev/null || true)"
 TEXT=""
 DIR=""
 if [[ -n "$INPUT" ]] && command -v jq >/dev/null 2>&1; then
-  TEXT="$(jq -r '.message // .tool_name // empty' <<<"$INPUT" 2>/dev/null || true)"
+  TEXT="$(jq -r '.last_assistant_message // .message // .tool_name // empty' <<<"$INPUT" 2>/dev/null || true)"
   DIR="$(jq -r '.cwd // empty' <<<"$INPUT" 2>/dev/null || true)"
 
   if [[ "$SOURCE" == "codex" && "$EVENT" == "permission" ]]; then
@@ -19,12 +19,6 @@ if [[ -n "$INPUT" ]] && command -v jq >/dev/null 2>&1; then
       bypassPermissions | dontAsk) exit 0 ;;
     esac
   fi
-fi
-
-if [[ "${AGENT_NOTIFY_DEBUG:-0}" == "1" ]]; then
-  LOG="${AGENT_NOTIFY_DEBUG_LOG:-$HOME/.local/state/agent-notify/hook.log}"
-  mkdir -p "$(dirname "$LOG")"
-  printf '%s\t%s\t%s\t%s\n' "$(date -Is 2>/dev/null || true)" "$SOURCE" "$EVENT" "$INPUT" >> "$LOG" 2>/dev/null || true
 fi
 
 exec agent-notify "$SOURCE" "$EVENT" "$TEXT" "$DIR"
