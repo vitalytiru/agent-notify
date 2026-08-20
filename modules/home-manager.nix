@@ -77,6 +77,16 @@ in
       '';
     };
 
+    codex.permission = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Also notify on codex PermissionRequest events. Off by default:
+        codex fires them for every approval action, including auto-approved
+        tool calls, which is noisy.
+      '';
+    };
+
     opencode.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -126,18 +136,20 @@ in
             }
           ];
         }
-      ];
-      PermissionRequest = [
-        {
-          hooks = [
-            {
-              type = "command";
-              command = "${bin}/agent-notify-hook codex permission";
-              timeout = 15;
-            }
-          ];
-        }
-      ];
+      ]
+      // lib.optionalAttrs cfg.codex.permission {
+        PermissionRequest = [
+          {
+            hooks = [
+              {
+                type = "command";
+                command = "${bin}/agent-notify-hook codex permission";
+                timeout = 15;
+              }
+            ];
+          }
+        ];
+      };
     };
 
     xdg.configFile."opencode/plugins/agent-notify.ts" = lib.mkIf cfg.opencode.enable {

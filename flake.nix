@@ -25,7 +25,7 @@
           default = self.packages.${system}.agent-notify;
           agent-notify = pkgs.stdenv.mkDerivation {
             pname = "agent-notify";
-            version = "0.6.4";
+            version = "0.7.0";
             dontUnpack = true;
             nativeBuildInputs = [ pkgs.makeWrapper ];
             installPhase = ''
