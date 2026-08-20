@@ -125,7 +125,7 @@ in
 
     programs.claude-code.plugins.agent-notify = lib.mkIf cfg.claude.enable "${cfg.package}/claude-plugin";
 
-    programs.codex.hooks = lib.mkIf cfg.codex.enable {
+    programs.codex.hooks = lib.mkIf cfg.codex.enable ({
       Stop = [
         {
           hooks = [
@@ -136,21 +136,20 @@ in
             }
           ];
         }
-      ]
-      // lib.optionalAttrs cfg.codex.permission {
-        PermissionRequest = [
-          {
-            hooks = [
-              {
-                type = "command";
-                command = "${bin}/agent-notify-hook codex permission";
-                timeout = 15;
-              }
-            ];
-          }
-        ];
-      };
-    };
+      ];
+    } // lib.optionalAttrs cfg.codex.permission {
+      PermissionRequest = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${bin}/agent-notify-hook codex permission";
+              timeout = 15;
+            }
+          ];
+        }
+      ];
+    });
 
     xdg.configFile."opencode/plugins/agent-notify.ts" = lib.mkIf cfg.opencode.enable {
       text = lib.replaceStrings
